@@ -4,7 +4,11 @@ import sys
 HLT = 0b00000001
 LDI = 0b10000010
 PRN = 0b01000111
+ADD = 0b10100000
 MUL = 0b10100010
+SP = 0b00000111
+PUSH = 0b01000101
+POP = 0b01000110
 
 
 class CPU:
@@ -16,11 +20,15 @@ class CPU:
         self.ram = [0] * 256
         self.registers = [0] * 8
         self.pc = 0                  # Program Counter
+        self.registers[SP] = 0xf4
         self.ops = {}
+        self.ops[HLT] = self.HLT
         self.ops[LDI] = self.LDI
         self.ops[PRN] = self.PRN
-        self.ops[HLT] = self.HLT
+        self.ops[ADD] = self.ADD
         self.ops[MUL] = self.MUL
+        self.ops[PUSH] = self.PUSH
+        self.ops[POP] = self.POP
 
 
     def ram_read(self, address):
@@ -44,6 +52,12 @@ class CPU:
         self.ram_read(address)
         self.pc += 2
 
+    def ADD(self):
+        reg_a = self.ram[self.pc + 1]
+        reg_b = self.ram[self.pc + 2]
+        self.alu('ADD', reg_a, reg_b)
+        self.pc += 3
+
     def MUL(self):
         reg_a = self.ram[self.pc + 1]
         reg_b = self.ram[self.pc + 2]
@@ -51,7 +65,19 @@ class CPU:
         self.alu('MUL', reg_a, reg_b)
         self.pc += 3
 
+    def PUSH(self):
+            address = self.ram[self.pc + 1]
+            value = self.registers[address]
+            self.registers[SP] -= 1
+            self.ram[self.registers[SP]] = value
+            self.pc += 2
 
+    def POP(self):
+        address = self.ram[self.pc + 1]
+        value = self.ram[self.registers[SP]]
+        self.registers[address] = value
+        self.registers[SP] += 1
+        self.pc += 2
 
     def load(self):
         """Load a program into memory."""
